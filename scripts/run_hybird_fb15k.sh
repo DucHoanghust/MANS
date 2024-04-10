@@ -10,7 +10,7 @@ CUDA_VISIBLE_DEVICES=$GPU nohup python /content/MANS/run.py -dataset=$DATA \
   -neg_mode=hybrid \
   -train_mode=normal \
   -epoch=1000 \
-  -save=./checkpoint/$DATA-transe-hybrid-$BETA-$EPOCH \
+  -save=/content/MANS/checkpoint/$DATA-transe-hybrid-$BETA-$EPOCH \
   -test_mode=$TASK \
   -img_grad=False \
   -img_dim=4096 \
