@@ -21,4 +21,4 @@ CUDA_VISIBLE_DEVICES=$GPU nohup python /content/MANS/run.py -dataset=$DATA \
   -neg_num=1 \
   -kernel=$KERNEL \
   -learning_rate=1.0 \
-  -beta=$BETA > $DATA-$KERNEL-$MODE-$BETA-$NUM_BATCH-$MARGIN-$EPOCH.txt &
+  -beta=$BETA > /content/MANS/log/$DATA-$KERNEL-$MODE-$BETA-$NUM_BATCH-$MARGIN-$EPOCH.txt &
