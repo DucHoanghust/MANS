@@ -4,7 +4,7 @@ DATA=DB15K
 EPOCH=1000
 GPU=2
 
-CUDA_VISIBLE_DEVICES=$GPU nohup python run.py -dataset=$DATA \
+CUDA_VISIBLE_DEVICES=$GPU nohup python /content/MANS/run.py -dataset=$DATA \
   -num_batch=400 \
   -margin=12 \
   -neg_mode=hybrid \
@@ -17,4 +17,4 @@ CUDA_VISIBLE_DEVICES=$GPU nohup python run.py -dataset=$DATA \
   -neg_num=1 \
   -kernel=transe \
   -learning_rate=1.0 \
-  -beta=$BETA > ./log/$DATA-transe-hybrid-$BETA-$EPOCH.txt &
+  -beta=$BETA > /content/MANS/log/$DATA-transe-hybrid-$BETA-$EPOCH.txt &
