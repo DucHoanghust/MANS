@@ -1,7 +1,7 @@
 MARGIN=12
 KERNEL=transe
 
-CUDA_VISIBLE_DEVICES=0 nohup python run.py -dataset=DB15K \
+CUDA_VISIBLE_DEVICES=0 nohup python /content/MANS/run.py -dataset=DB15K \
   -num_batch=400 \
   -margin=$MARGIN \
   -neg_mode=normal \
@@ -13,4 +13,4 @@ CUDA_VISIBLE_DEVICES=0 nohup python run.py -dataset=DB15K \
   -img_dim=4096 \
   -neg_num=1 \
   -kernel=transe \
-  -learning_rate=1.0 > ./log/DB15K-base-$KERNEL-margin$MARGIN.txt &
+  -learning_rate=1.0 > /content/MANS/log/DB15K-base-$KERNEL-margin$MARGIN.txt &
