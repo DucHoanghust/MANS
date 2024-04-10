@@ -4,7 +4,7 @@ KERNEL=transe
 NEG_NUM=1
 MARGIN=12
 
-CUDA_VISIBLE_DEVICES=1 nohup python run.py -dataset=$DATA \
+CUDA_VISIBLE_DEVICES=1 nohup python /content/MANS/run.py -dataset=$DATA \
   -num_batch=400 \
   -margin=$MARGIN \
   -neg_mode=img \
@@ -17,4 +17,4 @@ CUDA_VISIBLE_DEVICES=1 nohup python run.py -dataset=$DATA \
   -neg_num=$NEG_NUM \
   -kernel=$KERNEL \
   -learning_rate=1.0 \
-  -beta=$BETA > ./log/$DATA-$KERNEL-$MARGIN-ts-$BETA-lp.txt &
+  -beta=$BETA > /content/MANS/log/$DATA-$KERNEL-$MARGIN-ts-$BETA-lp.txt &
