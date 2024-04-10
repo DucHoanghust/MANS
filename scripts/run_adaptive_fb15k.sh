@@ -8,13 +8,13 @@ MODE=adaptive
 EPOCH=1000
 GPU=1
 
-CUDA_VISIBLE_DEVICES=$GPU nohup python run.py -dataset=$DATA \
+CUDA_VISIBLE_DEVICES=$GPU nohup python /content/MANS/run.py -dataset=$DATA \
   -num_batch=$NUM_BATCH \
   -margin=$MARGIN \
   -neg_mode=$MODE \
   -train_mode=normal \
   -epoch=$EPOCH \
-  -save=./checkpoint/$DATA-$KERNEL-$MODE-$BETA-$NUM_BATCH-$MARGIN-$EPOCH \
+  -save=/content/MANS/checkpoint/$DATA-$KERNEL-$MODE-$BETA-$NUM_BATCH-$MARGIN-$EPOCH \
   -test_mode=$TASK \
   -img_grad=False \
   -img_dim=4096 \
