@@ -7,7 +7,7 @@ CUDA_VISIBLE_DEVICES=1 nohup python /content/MANS/run.py -dataset=FB15K \
   -neg_mode=normal \
   -train_mode=normal \
   -epoch=1200 \
-  -save=./checkpoint/FB15K-base-$KERNEL-margin$MARGIN \
+  -save=/content/MANS/checkpoint/FB15K-base-$KERNEL-margin$MARGIN \
   -test_mode=lp \
   -img_grad=False \
   -img_dim=4096 \
