@@ -9,7 +9,7 @@ CUDA_VISIBLE_DEVICES=1 nohup python /content/MANS/run.py -dataset=$DATA \
   -margin=$MARGIN \
   -neg_mode=img \
   -train_mode=adp \
-  -epoch=1000 \
+  -epoch=100 \
   -save=/content/MANS/checkpoint/FB15K-transe-twostage \
   -test_mode=lp \
   -img_grad=False \
