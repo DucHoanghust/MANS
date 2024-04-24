@@ -3,7 +3,7 @@ CUDA_VISIBLE_DEVICES=0 nohup python /content/MANS/run.py -dataset=FB15K \
   -margin=12 \
   -neg_mode=img \
   -train_mode=normal \
-  -epoch=1000 \
+  -epoch=100 \
   -save=/content/MANS/checkpoint/DB15K-img \
   -test_mode=lp \
   -img_grad=True \
