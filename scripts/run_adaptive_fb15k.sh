@@ -5,7 +5,7 @@ NUM_BATCH=400
 KERNEL=transe
 MARGIN=6
 MODE=adaptive
-EPOCH=1000
+EPOCH=100
 GPU=1
 
 CUDA_VISIBLE_DEVICES=$GPU nohup python /content/MANS/run.py -dataset=$DATA \
