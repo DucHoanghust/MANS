@@ -1,91 +1,114 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from .Model import Model
 
-class TransH(nn.Module):
-    def __init__(self, ent_tot, rel_tot, dim_e, dim_r, margin, epsilon):
-        super(TransH, self).__init__()
-        self.ent_tot = ent_tot
-        self.rel_tot = rel_tot
-        self.dim_e = dim_e
-        self.dim_r = dim_r
+class TransH(Model):
+
+    def __init__(self, ent_tot, rel_tot, dim=100, p_norm=1, norm_flag=True, margin=None, epsilon=None):
+        super(TransH, self).__init__(ent_tot, rel_tot)
+
+        self.dim = dim
         self.margin = margin
         self.epsilon = epsilon
+        self.norm_flag = norm_flag
+        self.p_norm = p_norm
 
-        # Embedding layers
-        self.ent_embeddings = nn.Embedding(self.ent_tot, self.dim_e)
-        self.rel_embeddings = nn.Embedding(self.rel_tot, self.dim_r)
-        self.wr = nn.Embedding(self.rel_tot, self.dim_r)  # Vector pháp tuyến cho mỗi quan hệ
+        self.ent_embeddings = nn.Embedding(self.ent_tot, self.dim)
+        self.rel_embeddings = nn.Embedding(self.rel_tot, self.dim)
+        self.norm_embeddings = nn.Embedding(self.rel_tot, self.dim)  # Vector pháp tuyến cho mỗi quan hệ
 
-        # Parameter initialization ranges
-        self.ent_embedding_range = nn.Parameter(
-            torch.Tensor([(self.margin + self.epsilon) / self.dim_e]), 
-            requires_grad=False
-        )
-
-        nn.init.uniform_(
-            tensor=self.ent_embeddings.weight.data, 
-            a=-self.ent_embedding_range.item(), 
-            b=self.ent_embedding_range.item()
-        )
-
-        self.rel_embedding_range = nn.Parameter(
-            torch.Tensor([(self.margin + self.epsilon) / self.dim_r]), 
-            requires_grad=False
-        )
-
-        nn.init.uniform_(
-            tensor=self.rel_embeddings.weight.data, 
-            a=-self.rel_embedding_range.item(), 
-            b=self.rel_embedding_range.item()
-        )
-
-        self.margin = nn.Parameter(torch.Tensor([margin]))
-        self.margin.requires_grad = False
-
-    def project_to_hyperplane(self, entity, w):
-        return entity - torch.sum(entity * w, dim=1, keepdim=True) * w
-
-    def get_pos_embd(self, sample):
-        h = self.ent_embeddings(sample[:, 0])
-        r = self.rel_embeddings(sample[:, 1])
-        t = self.ent_embeddings(sample[:, 2])
-        
-        w = self.wr(sample[:, 1]).unsqueeze(dim=1)
-        
-        h_proj = self.project_to_hyperplane(h, w)
-        t_proj = self.project_to_hyperplane(t, w)
-        
-        return h_proj, r, t_proj, w
-
-    def get_neg_embd(self, sample):
-        h = self.ent_embeddings(sample[:, 0])
-        t = self.ent_embeddings(sample[:, 2])
-        return h if sample[:, 1][0] == 0 else t  # Assuming head-batch or tail-batch
-
-    def forward(self, pos_sample, neg_sample=None, mode=None):
-        h, r, t, w = self.get_pos_embd(pos_sample)
-        
-        if neg_sample is not None:
-            neg_embd = self.get_neg_embd(neg_sample)
-            wr_neg = (w * neg_embd).sum(dim=-1, keepdim=True)
-            wr_neg_wr = wr_neg * w
-            
-            if mode == "head-batch":
-                wr_t = (w * t).sum(dim=-1, keepdim=True)
-                wr_t_wr = wr_t * w
-                score = (neg_embd - wr_neg_wr) + (r - (t - wr_t_wr))
-            elif mode == "tail-batch":
-                wr_h = (w * h).sum(dim=-1, keepdim=True)
-                wr_h_wr = wr_h * w
-                score = ((h - wr_h_wr) + r) - (neg_embd - wr_neg_wr)
-            else:
-                raise ValueError("mode %s not supported" % mode)
+        if margin is None or epsilon is None:
+            nn.init.xavier_uniform_(self.ent_embeddings.weight.data)
+            nn.init.xavier_uniform_(self.rel_embeddings.weight.data)
+            nn.init.xavier_uniform_(self.norm_embeddings.weight.data)
         else:
-            wr_h = (w * h).sum(dim=-1, keepdim=True)
-            wr_h_wr = wr_h * w
-            wr_t = (w * t).sum(dim=-1, keepdim=True)
-            wr_t_wr = wr_t * w
-            score = (h - wr_h_wr) + r - (t - wr_t_wr)
+            self.embedding_range = nn.Parameter(
+                torch.Tensor([(self.margin + self.epsilon) / self.dim]), requires_grad=False
+            )
+            nn.init.uniform_(
+                tensor=self.ent_embeddings.weight.data,
+                a=-self.embedding_range.item(),
+                b=self.embedding_range.item()
+            )
+            nn.init.uniform_(
+                tensor=self.rel_embeddings.weight.data,
+                a=-self.embedding_range.item(),
+                b=self.embedding_range.item()
+            )
+            nn.init.uniform_(
+                tensor=self.norm_embeddings.weight.data,
+                a=-self.embedding_range.item(),
+                b=self.embedding_range.item()
+            )
+
+        if margin is not None:
+            self.margin = nn.Parameter(torch.Tensor([margin]))
+            self.margin.requires_grad = False
+            self.margin_flag = True
+        else:
+            self.margin_flag = False
+
+    def project_to_hyperplane(self, entity, norm):
+        return entity - torch.sum(entity * norm, dim=1, keepdim=True) * norm
+
+    def _calc(self, h, t, r, norm, mode):
+        h_proj = self.project_to_hyperplane(h, norm)
+        t_proj = self.project_to_hyperplane(t, norm)
         
-        score = torch.norm(score, dim=-1)
+        if self.norm_flag:
+            h_proj = F.normalize(h_proj, 2, -1)
+            r = F.normalize(r, 2, -1)
+            t_proj = F.normalize(t_proj, 2, -1)
+
+        if mode != 'normal':
+            h_proj = h_proj.view(-1, r.shape[0], h_proj.shape[-1])
+            t_proj = t_proj.view(-1, r.shape[0], t_proj.shape[-1])
+            r = r.view(-1, r.shape[0], r.shape[-1])
+
+        if mode == 'head_batch':
+            score = h_proj + (r - t_proj)
+        else:
+            score = (h_proj + r) - t_proj
+
+        score = torch.norm(score, self.p_norm, -1).flatten()
         return score
+
+    def forward(self, data):
+        batch_h = data['batch_h']
+        batch_t = data['batch_t']
+        batch_r = data['batch_r']
+        mode = data['mode']
+
+        h = self.ent_embeddings(batch_h)
+        t = self.ent_embeddings(batch_t)
+        r = self.rel_embeddings(batch_r)
+        norm = self.norm_embeddings(batch_r)
+
+        score = self._calc(h, t, r, norm, mode)
+        
+        if self.margin_flag:
+            return self.margin - score
+        else:
+            return score
+
+    def regularization(self, data):
+        batch_h = data['batch_h']
+        batch_t = data['batch_t']
+        batch_r = data['batch_r']
+
+        h = self.ent_embeddings(batch_h)
+        t = self.ent_embeddings(batch_t)
+        r = self.rel_embeddings(batch_r)
+        norm = self.norm_embeddings(batch_r)
+
+        regul = (torch.mean(h ** 2) + torch.mean(t ** 2) + torch.mean(r ** 2) + torch.mean(norm ** 2)) / 4
+        return regul
+
+    def predict(self, data):
+        score = self.forward(data)
+        if self.margin_flag:
+            score = self.margin - score
+            return score.cpu().data.numpy()
+        else:
+            return score.cpu().data.numpy()
